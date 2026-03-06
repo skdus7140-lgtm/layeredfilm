@@ -1,0 +1,8 @@
+{
+  "name": "Layered Film Portfolio",
+  "description": "A premium, architectural interior film installation portfolio website with an admin dashboard for content and theme management.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
