@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (as per Phase 4, Step 1)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Projects collection
+    match /projects/{projectId} {
+      allow read: if true;
+      allow write: if true; // Open write for client, as they use a local custom password auth system
+    }
+
+    // Settings collection (contains theme and admin)
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if true; // Open write for client, as they use a local custom password auth system
+    }
+
+    // Contact messages collection
+    match /messages/{messageId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if true;
+    }
+  }
+}

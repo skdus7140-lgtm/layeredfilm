@@ -34,10 +34,10 @@ export const BeforeAfterSlider: React.FC<Props> = ({ before, after, className = 
 
       {/* Before Image (Clipped) */}
       <div
-        className="absolute top-0 left-0 w-full h-full overflow-hidden border-r-2 border-white"
-        style={{ width: `${position}%` }}
+        className="absolute top-0 left-0 w-full h-full overflow-hidden"
+        style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}
       >
-        <img src={before} alt="Before" className="absolute top-0 left-0 h-full w-auto max-w-none object-cover" style={{ width: containerRef.current?.offsetWidth }} />
+        <img src={before} alt="Before" className="w-full h-full object-cover animate-in fade-in duration-500" />
         <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 text-xs rounded-full">Before</div>
       </div>
 

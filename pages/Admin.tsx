@@ -6,9 +6,10 @@ import { ProjectCategory, Project } from '../types';
 import { Logo } from '../constants';
 
 export const Admin: React.FC = () => {
-  const { theme, setTheme, projects, setProjects, messages, adminPassword, setAdminPassword } = useApp();
+  const { theme, setTheme, projects, addProject, updateProject, deleteProject, messages, adminPassword, setAdminPassword } = useApp();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'projects' | 'theme' | 'messages' | 'security'>('dashboard');
+  const [activeTab, setActiveTab ] = useState<'dashboard' | 'projects' | 'theme' | 'messages' | 'security'>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
@@ -36,9 +37,12 @@ export const Admin: React.FC = () => {
     }
   };
 
-  const handleSaveProject = () => {
+  const handleSaveProject = async () => {
     if (editingId) {
-      setProjects(projects.map(p => p.id === editingId ? { ...p, ...newProject } as Project : p));
+      const existingProject = projects.find(p => p.id === editingId);
+      if (existingProject) {
+        await updateProject({ ...existingProject, ...newProject } as Project);
+      }
       setEditingId(null);
     } else {
       const p = {
@@ -50,20 +54,23 @@ export const Admin: React.FC = () => {
         productUsed: newProject.productUsed || '',
         location: newProject.location || ''
       } as Project;
-      setProjects([p, ...projects]);
+      await addProject(p);
       setIsAdding(false);
     }
     setNewProject({ category: ProjectCategory.APARTMENT, visible: true, detailImages: [], productUsed: '', location: '' });
   };
 
-  const deleteProject = (id: string) => {
+  const handleDeleteProject = async (id: string) => {
     if (confirm('정말 삭제하시겠습니까?')) {
-      setProjects(projects.filter(p => p.id !== id));
+      await deleteProject(id);
     }
   };
 
-  const toggleVisibility = (id: string) => {
-    setProjects(projects.map(p => p.id === id ? { ...p, visible: !p.visible } : p));
+  const toggleVisibility = async (id: string) => {
+    const existingProject = projects.find(p => p.id === id);
+    if (existingProject) {
+      await updateProject({ ...existingProject, visible: !existingProject.visible });
+    }
   };
 
   const menuItems = [
@@ -116,8 +123,41 @@ export const Admin: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      <aside className="w-72 bg-[#2B4360] text-white flex flex-col shrink-0">
+    <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row overflow-hidden">
+      {/* Mobile Header Bar */}
+      <div className="bg-[#2B4360] text-white p-4 flex items-center justify-between md:hidden border-b border-white/10 shrink-0">
+        <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 hover:bg-white/10 rounded-full transition-colors">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <div className="flex items-center gap-2">
+          <Logo color="#fff" />
+          <span className="font-serif font-bold text-sm tracking-tight">Admin</span>
+        </div>
+        <button 
+          onClick={() => navigate('/')}
+          className="p-2 -mr-2 hover:bg-white/10 rounded-full transition-colors"
+          title="홈페이지 바로가기"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Sidebar Overlay for Mobile */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden animate-in fade-in duration-200"
+          onClick={() => setIsSidebarOpen(false)}
+        ></div>
+      )}
+
+      {/* Sidebar Drawer */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#2B4360] text-white flex flex-col shrink-0 transition-transform duration-300 md:relative md:translate-x-0 ${
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
         <div className="p-8 space-y-12 flex-grow">
           <div className="flex items-center gap-3">
             <Logo color="#fff" />
@@ -127,7 +167,10 @@ export const Admin: React.FC = () => {
             {menuItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id as any)}
+                onClick={() => {
+                  setActiveTab(item.id as any);
+                  setIsSidebarOpen(false);
+                }}
                 className={`w-full text-left px-5 py-4 rounded-xl transition-all flex items-center gap-4 font-medium ${
                   activeTab === item.id ? 'bg-white/10 shadow-inner' : 'opacity-50 hover:opacity-100 hover:bg-white/5'
                 }`}
@@ -153,25 +196,25 @@ export const Admin: React.FC = () => {
         </div>
       </aside>
 
-      <main className="flex-grow p-12 overflow-y-auto h-screen">
+      <main className="flex-grow p-6 md:p-12 overflow-y-auto h-[calc(100vh-65px)] md:h-screen">
         {activeTab === 'projects' && (
           <div className="space-y-8 animate-in fade-in duration-300">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-3xl font-bold text-gray-800 mb-1">포트폴리오 관리</h2>
                 <p className="text-gray-400 text-sm">고객에게 보여줄 시공 사례를 추가하거나 수정할 수 있습니다.</p>
               </div>
               <button
                 onClick={() => { setIsAdding(true); setEditingId(null); setNewProject({ category: ProjectCategory.APARTMENT, visible: true, detailImages: [], productUsed: '', location: '' }); }}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all w-full sm:w-auto text-center"
               >
                 + 새 프로젝트 등록
               </button>
             </div>
 
             {(isAdding || editingId) && (
-              <div className="bg-white p-10 rounded-3xl shadow-xl border border-gray-100 space-y-8 animate-in slide-in-from-top-4">
-                <div className="flex justify-between items-center border-b pb-6">
+              <div className="bg-white p-6 md:p-10 rounded-3xl shadow-xl border border-gray-100 space-y-8 animate-in slide-in-from-top-4">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center border-b pb-6 gap-4">
                   <h3 className="text-xl font-bold text-gray-800">{editingId ? '프로젝트 정보 수정' : '새 프로젝트 등록'}</h3>
                   <div className="flex items-center gap-2">
                     <input 
@@ -185,7 +228,7 @@ export const Admin: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">제목</label>
                     <input type="text" className="w-full bg-gray-50 border-none p-4 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 한남동 프리미엄 아파트 시공" value={newProject.title || ''} onChange={e => setNewProject({...newProject, title: e.target.value})} />
@@ -212,7 +255,7 @@ export const Admin: React.FC = () => {
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">대표(After) 사진 URL</label>
                     <input type="text" className="w-full bg-gray-50 border-none p-4 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" value={newProject.afterImage || ''} onChange={e => setNewProject({...newProject, afterImage: e.target.value})} />
                   </div>
-                  <div className="col-span-2 space-y-2">
+                  <div className="col-span-1 md:col-span-2 space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block">디테일 갤러리 사진 URL (엔터로 구분하여 여러 장 등록 가능)</label>
                     <textarea 
                       rows={3} 
@@ -222,48 +265,48 @@ export const Admin: React.FC = () => {
                       onChange={e => setNewProject({...newProject, detailImages: e.target.value.split('\n').filter(url => url.trim() !== '')})}
                     />
                   </div>
-                  <div className="col-span-2 space-y-2">
+                  <div className="col-span-1 md:col-span-2 space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">시공 상세 설명</label>
                     <textarea rows={4} className="w-full bg-gray-50 border-none p-4 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="시공 과정이나 특징을 자세히 적어주세요." value={newProject.description || ''} onChange={e => setNewProject({...newProject, description: e.target.value})} />
                   </div>
                 </div>
-                <div className="flex gap-4 pt-4 border-t">
-                  <button onClick={handleSaveProject} className="bg-green-600 hover:bg-green-700 text-white px-10 py-4 rounded-xl font-bold shadow-lg transition-all active:scale-95">정보 저장하기</button>
-                  <button onClick={() => { setIsAdding(false); setEditingId(null); }} className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-10 py-4 rounded-xl font-bold transition-all">취소</button>
+                <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t">
+                  <button onClick={handleSaveProject} className="bg-green-600 hover:bg-green-700 text-white px-10 py-4 rounded-xl font-bold shadow-lg transition-all active:scale-95 text-center w-full sm:w-auto">정보 저장하기</button>
+                  <button onClick={() => { setIsAdding(false); setEditingId(null); }} className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-10 py-4 rounded-xl font-bold transition-all text-center w-full sm:w-auto">취소</button>
                 </div>
               </div>
             )}
 
             <div className="grid grid-cols-1 gap-4">
               {projects.map(p => (
-                <div key={p.id} className="bg-white p-6 rounded-2xl flex items-center justify-between border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-6">
-                    <div className="relative">
-                      <img src={p.afterImage} className="w-24 h-24 object-cover rounded-2xl" alt="" />
+                <div key={p.id} className="bg-white p-4 md:p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between border border-gray-100 shadow-sm hover:shadow-md transition-shadow gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+                    <div className="relative shrink-0 w-24 h-24 sm:w-24 sm:h-24 mx-auto sm:mx-0">
+                      <img src={p.afterImage} className="w-full h-full object-cover rounded-2xl" alt="" />
                       <div className={`absolute -top-3 -left-3 px-2 py-1 rounded-md text-[9px] font-black text-white shadow-sm ${p.visible ? 'bg-green-500' : 'bg-gray-400'}`}>
                         {p.visible ? '공개 중' : '숨김'}
                       </div>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-blue-50 text-blue-600 rounded-full">{p.category}</span>
+                    <div className="text-center sm:text-left">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                        <span className="inline-block mx-auto sm:mx-0 text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-blue-50 text-blue-600 rounded-full w-max">{p.category}</span>
                         <h4 className="font-bold text-xl text-gray-800">{p.title}</h4>
                       </div>
-                      <p className="text-sm text-gray-400 flex items-center gap-3">
+                      <p className="text-xs sm:text-sm text-gray-400 flex flex-wrap justify-center sm:justify-start items-center gap-2 sm:gap-3">
                         <span className="flex items-center gap-1">📍 {p.location}</span>
-                        <span className="w-1 h-1 bg-gray-200 rounded-full"></span>
+                        <span className="hidden sm:inline w-1 h-1 bg-gray-200 rounded-full"></span>
                         <span className="flex items-center gap-1">🛠️ {p.productUsed || '제품 정보 없음'}</span>
-                        <span className="w-1 h-1 bg-gray-200 rounded-full"></span>
+                        <span className="hidden sm:inline w-1 h-1 bg-gray-200 rounded-full"></span>
                         <span className="flex items-center gap-1">🖼️ {p.detailImages?.length || 0} Photos</span>
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex gap-2 justify-center sm:justify-end">
                     <button onClick={() => toggleVisibility(p.id)} className={`px-4 py-2 rounded-lg font-bold text-xs transition-colors ${p.visible ? 'bg-gray-50 text-gray-400 hover:bg-gray-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}>
                       {p.visible ? '숨기기' : '공개'}
                     </button>
                     <button onClick={() => { setEditingId(p.id); setNewProject(p); setIsAdding(false); }} className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg font-bold text-xs transition-colors">수정</button>
-                    <button onClick={() => deleteProject(p.id)} className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg font-bold text-xs transition-colors">삭제</button>
+                    <button onClick={() => handleDeleteProject(p.id)} className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg font-bold text-xs transition-colors">삭제</button>
                   </div>
                 </div>
               ))}

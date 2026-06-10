@@ -85,7 +85,25 @@ const About: React.FC = () => (
 );
 
 const AppContent: React.FC = () => {
-  const { theme } = useApp();
+  const { theme, loading } = useApp();
+  
+  if (loading) {
+    return (
+      <div 
+        className="min-h-screen flex flex-col items-center justify-center"
+        style={{ backgroundColor: theme.bgColor, color: theme.textColor }}
+      >
+        <div className="flex flex-col items-center gap-6 animate-pulse">
+          <img 
+            src="https://i.imgur.com/6pCt9GC.png" 
+            alt="Layered Film" 
+            className="h-16 w-auto object-contain transition-all duration-300 pointer-events-none" 
+          />
+          <p className="font-serif text-lg tracking-widest uppercase opacity-75 font-medium">Layered Film</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div style={{ backgroundColor: theme.bgColor, color: theme.textColor }}>

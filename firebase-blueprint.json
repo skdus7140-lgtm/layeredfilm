@@ -1,0 +1,74 @@
+{
+  "entities": {
+    "Project": {
+      "title": "Project",
+      "description": "Portfolio project item representing a past work",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "location": { "type": "string" },
+        "category": { "type": "string" },
+        "productUsed": { "type": "string" },
+        "description": { "type": "string" },
+        "beforeImage": { "type": "string" },
+        "afterImage": { "type": "string" },
+        "detailImages": { "type": "array" },
+        "date": { "type": "string" },
+        "visible": { "type": "boolean" }
+      },
+      "required": ["id", "title", "category", "beforeImage", "afterImage", "date", "visible"]
+    },
+    "ThemeConfig": {
+      "title": "ThemeConfig",
+      "description": "Visual theme preferences for the website",
+      "type": "object",
+      "properties": {
+        "bgColor": { "type": "string" },
+        "primaryColor": { "type": "string" },
+        "secondaryColor": { "type": "string" },
+        "textColor": { "type": "string" },
+        "brandName": { "type": "string" },
+        "logoUrl": { "type": "string" }
+      },
+      "required": ["bgColor", "primaryColor", "secondaryColor", "textColor", "brandName"]
+    },
+    "ContactMessage": {
+      "title": "ContactMessage",
+      "description": "Contact message submitted by customers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "type": { "type": "string" },
+        "message": { "type": "string" },
+        "date": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "type", "message", "date"]
+    },
+    "AdminConfig": {
+      "title": "AdminConfig",
+      "description": "Admin settings and permissions",
+      "type": "object",
+      "properties": {
+        "password": { "type": "string" }
+      },
+      "required": ["password"]
+    }
+  },
+  "firestore": {
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Collection of portfolio projects"
+    },
+    "/settings/{settingId}": {
+      "schema": "object",
+      "description": "General settings configurations for theme and auth"
+    },
+    "/messages/{messageId}": {
+      "schema": "ContactMessage",
+      "description": "Collection of customer inquiry messages"
+    }
+  }
+}
